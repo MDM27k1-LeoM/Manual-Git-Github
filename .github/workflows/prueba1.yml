@@ -1,0 +1,70 @@
+# WORKFLOW: CI/CD PruebaActions
+
+# Descripción: Compila, prueba y genera reportes de cobertura
+# Autor: [Tu nombre]
+# Fecha: Julio 2026
+
+
+name: CI/CD PruebaActions
+
+
+# DISPARADORES (Triggers)
+# Define cuándo se ejecutará este workflow
+
+
+on:
+  push:
+    branches: [ "main", "develop" ]
+  pull_request:
+    branches: [ "main", "develop" ]
+  workflow_dispatch:
+
+
+# PERMISOS DEL WORKFLOW
+# Define qué acciones puede realizar este workflow
+
+
+permissions:
+  contents: read
+  pull-requests: read
+  actions: read
+
+
+# TRABAJOS (Jobs)
+# Define las tareas que se van a ejecutar
+
+
+jobs:
+  build-and-test:
+    name: Compilar y Probar
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Descargar el codigo del repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar el SDK de .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restaurar paquetes NuGet
+        run: dotnet restore PruebaActions.sln
+
+      - name: Compilar el proyecto en modo Release
+        run: dotnet build PruebaActions.sln --configuration Release --no-restore
+
+      - name: Ejecutar pruebas unitarias con cobertura
+        run: dotnet test PruebaActions.sln --configuration Release --no-build --collect:"XPlat Code Coverage"
+
+      - name: Generar reporte HTML de cobertura
+        run: |
+          dotnet tool install -g dotnet-reportgenerator-globaltool
+          reportgenerator -reports:./TestResults/**/coverage.cobertura.xml -targetdir:./CoverageReport -reporttypes:Html
+
+      - name: Subir el reporte de cobertura a GitHub
+        uses: actions/upload-artifact@v4
+        with:
+          name: reporte-de-cobertura
+          path: ./CoverageReport/
+          retention-days: 7

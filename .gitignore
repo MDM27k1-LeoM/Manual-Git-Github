@@ -1,0 +1,79 @@
+# ============================================
+# Archivos a ignorar
+# ============================================
+
+# Build output
+bin/
+obj/
+[Bb]uild/
+[Bb]in/
+[Oo]bj/
+
+# User-specific files
+*.rsuser
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Visual Studio
+.vs/
+*.swp
+*.swo
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# Test results
+TestResults/
+*.coverage
+*.coveragexml
+*.trx
+*.TestResults
+
+# Coverage
+coverage/
+*.html
+*.htm
+
+# NuGet
+*.nupkg
+*.nuget.props
+*.nuget.targets
+packages/
+
+# Publish
+*.publishsettings
+*.pubxml
+*.pubxml.user
+
+# Docker
+*.dockerignore
+Dockerfile
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Logs
+logs/
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Node (algunas herramientas)
+node_modules/
+package-lock.json
+
+# SonarCloud
+.sonar/
+sonar-project.properties
+
+# Temp files
+*.tmp
+*.temp
