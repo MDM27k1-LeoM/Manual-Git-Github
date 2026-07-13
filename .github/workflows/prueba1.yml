@@ -1,17 +1,10 @@
-# WORKFLOW: CI/CD PruebaActions
-
+# Workflow: CI/CD PruebaActions
 # Descripción: Compila, prueba y genera reportes de cobertura
-# Autor: [Tu nombre]
-# Fecha: Julio 2026
 
 
 name: CI/CD PruebaActions
 
-
-# DISPARADORES (Triggers)
-# Define cuándo se ejecutará este workflow
-
-
+# Disparadores: Cuándo se ejecuta este workflow
 on:
   push:
     branches: [ "main", "develop" ]
@@ -19,52 +12,105 @@ on:
     branches: [ "main", "develop" ]
   workflow_dispatch:
 
-
-# PERMISOS DEL WORKFLOW
-# Define qué acciones puede realizar este workflow
-
-
+# Permisos: Qué puede hacer este workflow
 permissions:
   contents: read
   pull-requests: read
   actions: read
 
-
-# TRABAJOS (Jobs)
-# Define las tareas que se van a ejecutar
-
-
+# Trabajos: Las tareas que se van a ejecutar
 jobs:
   build-and-test:
     name: Compilar y Probar
     runs-on: ubuntu-latest
 
     steps:
+      # Descarga todo el código del repositorio
       - name: Descargar el codigo del repositorio
         uses: actions/checkout@v4
 
+      # Instala el SDK de .NET en la máquina virtual
       - name: Configurar el SDK de .NET
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'
 
+      # Muestra los archivos en la raíz para verificar que todo está bien
+      - name: Verificar estructura del proyecto
+        run: |
+          echo "Archivos en la raiz:"
+          ls -la
+          echo ""
+          echo "Verificando PruebaActions.sln..."
+          if [ -f "PruebaActions.sln" ]; then
+            echo "PruebaActions.sln encontrado"
+          else
+            echo "No se encontro PruebaActions.sln"
+            exit 1
+          fi
+
+      # Descarga todos los paquetes NuGet necesarios
       - name: Restaurar paquetes NuGet
         run: dotnet restore PruebaActions.sln
 
+      # Compila el código en modo Release (optimizado)
       - name: Compilar el proyecto en modo Release
         run: dotnet build PruebaActions.sln --configuration Release --no-restore
 
+      # Ejecuta las pruebas y mide qué porcentaje del código está probado
       - name: Ejecutar pruebas unitarias con cobertura
-        run: dotnet test PruebaActions.sln --configuration Release --no-build --collect:"XPlat Code Coverage"
+        run: |
+          dotnet test PruebaActions.sln \
+            --configuration Release \
+            --no-build \
+            --collect:"XPlat Code Coverage" \
+            --results-directory ./TestResults \
+            --logger "trx;LogFileName=test_results.trx"
+          
+          echo ""
+          echo "Verificando archivos generados..."
+          echo "Buscando archivos de cobertura:"
+          find ./TestResults -name "*.xml" -type f
 
+      # Instala una herramienta que genera reportes HTML de cobertura
       - name: Generar reporte HTML de cobertura
         run: |
           dotnet tool install -g dotnet-reportgenerator-globaltool
-          reportgenerator -reports:./TestResults/**/coverage.cobertura.xml -targetdir:./CoverageReport -reporttypes:Html
+          
+          echo ""
+          echo "Verificando archivos de cobertura..."
+          
+          COVERAGE_FILE=$(find ./TestResults -name "*.cobertura.xml" -type f | head -n 1)
+          
+          if [ -z "$COVERAGE_FILE" ]; then
+            echo "No se encontro archivo de cobertura"
+            echo "Buscando archivos XML en TestResults:"
+            find ./TestResults -name "*.xml" -type f
+            exit 1
+          fi
+          
+          echo "Archivo de cobertura encontrado: $COVERAGE_FILE"
+          
+          reportgenerator \
+            -reports:"$COVERAGE_FILE" \
+            -targetdir:./CoverageReport \
+            -reporttypes:Html
+          
+          echo "Reporte generado en ./CoverageReport/index.html"
 
+      # Guarda el reporte en GitHub para que pueda ser descargado
       - name: Subir el reporte de cobertura a GitHub
         uses: actions/upload-artifact@v4
         with:
           name: reporte-de-cobertura
           path: ./CoverageReport/
+          retention-days: 7
+
+      # Guarda los resultados de las pruebas (siempre se ejecuta)
+      - name: Subir resultados de pruebas
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: resultados-de-pruebas
+          path: ./TestResults/
           retention-days: 7
