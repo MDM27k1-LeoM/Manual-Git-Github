@@ -1,8 +1,11 @@
 # Workflow: CI/CD PruebaActions
 # Descripción: Compila, prueba y genera reportes de cobertura
 
-
 name: CI/CD PruebaActions
+
+# Variable de entorno para silenciar advertencia de Node.js (opcional)
+env:
+  ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
 
 # Disparadores: Cuándo se ejecuta este workflow
 on:
@@ -80,6 +83,7 @@ jobs:
           echo ""
           echo "Verificando archivos de cobertura..."
           
+          # Buscar el archivo de cobertura en cualquier subcarpeta
           COVERAGE_FILE=$(find ./TestResults -name "*.cobertura.xml" -type f | head -n 1)
           
           if [ -z "$COVERAGE_FILE" ]; then
@@ -91,6 +95,7 @@ jobs:
           
           echo "Archivo de cobertura encontrado: $COVERAGE_FILE"
           
+          # Generar el reporte usando la ruta exacta
           reportgenerator \
             -reports:"$COVERAGE_FILE" \
             -targetdir:./CoverageReport \
